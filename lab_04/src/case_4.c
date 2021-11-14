@@ -1,45 +1,16 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/wait.h>
-
-/*
-    Задание 4:
-
-    Написать программу, в которой предок и потомок обмениваются сообщением
-    через программный канал.
-*/
-
-void check_status(const int status)
-{
-    if (WIFEXITED(status) != 0)
-    {
-        printf("Дочерний процесс завершен нормально\n\n");
-        printf("Код завершения дочернего процесса: %d\n\n", WEXITSTATUS(status));
-        return;
-    }
-    else if (WIFSIGNALED(status) != 0)
-    {
-        printf("Дочерний процесс завершается неперехватываемым сигналом\n\n");
-        printf("Номер сигнала: %d\n\n", WTERMSIG(status));
-        return;
-    }
-    else  //if (WIFSTOPPED(status) != 0)
-    {
-        printf("Дочерный процесс остановился\n\n");
-        printf("Номер сигнала: %d\n\n", WSTOPSIG(status));
-        return;
-    }
-}
+#include "status.h"
 
 int main(void)
 {
-    const char *msg_1 = "Hello, Dad\n";
-    const char *msg_2 = "Hello, Dude\n";
-    char readbuffer[100];
-    char temp[100];
+    const char *msg_1 = "Overleaf is used by over eight million students and academics at 3,600 institutions worldwide.\n";
+    const char *msg_2 = "Just want to say that I am really grateful for Overleaf, it has enabled a slew of research and teaching development in my work that would have been annoyingly difficult before. Even people who don’t know LaTeX are participating with me on research proposals and that’s saying something if you know what LaTeX is like for the uninitiated.\n";
 
+    char readbuffer[1000];
     int fd[2];
+
+    int status;
+    int childpid_first, childpid_second;
+
     if (pipe(fd) == -1)
     {
         printf("1\n");
@@ -47,8 +18,7 @@ int main(void)
         return -1;
     }
 
-    // Первый дочерний процесс
-    int childpid_first = fork();
+    childpid_first = fork();
     if (childpid_first == -1)
     {
         perror("Can’t fork.\n");
@@ -62,8 +32,7 @@ int main(void)
         return 0;
     }
 
-    // Второй дочерний процесс
-    int childpid_second = fork();
+    childpid_second = fork();
     if (childpid_second == -1)
     {
         perror("Can't fork\n");
@@ -77,10 +46,9 @@ int main(void)
         return 0;
     }
 
-    int status, childpid;
-    childpid = wait(&status);
+    wait(&status);
     check_status(status);
-    childpid = wait(&status);
+    wait(&status);
     check_status(status);
 
     printf("Parent: id: %d pgroup: %d first child: %d second child: %d\n\n", getpid(), getpgrp(), childpid_first, childpid_second);
